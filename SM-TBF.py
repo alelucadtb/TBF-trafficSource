@@ -39,8 +39,9 @@ def sourceModule(Ton, Toff, tau, B, L, Nc, namefile):
             np.savetxt(f, line, fmt='%.2f')
 
 '''
-for labeling the packets:
-- 1 if they are compiant
+remove the tokens in the TBF corresponding to the bits in a packet.
+For labeling the packets:
+- 1 if they are compliant
 - 0 if they are excess
 '''
 def labeling(capacity, element, vector):
@@ -51,20 +52,13 @@ def labeling(capacity, element, vector):
         vector.append(0)
     return capacity
 
-# for manage the variable time and the token bucket generation rate (rho)
-def checkingTime(time, element, capacity, rho, b):
-    if time + element < 1:
-        time = time + element
-    else:
-        # how many tokens must be sum to the token bucket
-        time = time + element
-        add = rho * int(time)
-        if capacity + add < b:
-            capacity = capacity + add
-        else:
-            capacity = b
-        time = time % 1   
-    return time, capacity
+'''
+tokens are generated throw the time. 
+If the token rate is 8000 token/s, they aren't generated as a block of 8000 tokens every second.
+'''
+def tokenGeneration(element, rate, capacity, b):
+    capacity = min(capacity + element * rate, b)
+    return capacity
 
 def compliantPackets(vector):
     sum = 0
@@ -76,22 +70,21 @@ def compliantPackets(vector):
 def tokenBucketFilter(namefile, rho, b, b0):
     mat = np.loadtxt(namefile , delimiter=' ')
     capacity = b0
-    # it is a sufficient high value
-    time = 0.0
     # column vector in which it is stored the result
     F = []
 
     for elm in mat:
         '''
         different elements of elm mean:
-        - elm[0] is the arrival time
+        - elm[0] is the arrival tisme
         - elm[1] is the batch size --> number of packets for an arrival
         - elm[2] is the aggregated workload 
         '''
-        # the first things to do is to checking the time
-        time, capacity = checkingTime(time, elm[0], capacity, rho, b)
+        # print (elm[0], int(elm[1]), int(elm[2]), sep = ' ')
+        # the first things to do update the capacity of the TBF
+        capacity = tokenGeneration(elm[0], rho, capacity, b)
+        # check for every packet in a batch
         for num in range(0, int(elm[1])):
-            # check for every packet
             capacity = labeling(capacity, int(elm[2])/int(elm[1]), F)
             # print(capacity)
 
