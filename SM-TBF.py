@@ -3,8 +3,9 @@ import numpy as np
 import math
 from pathlib import Path
 
-def sourceModule(Ton, Toff, tau, B, L, Nc, namefile):
+def sourceModule(Ton, ToffMean, tau, B, L, Nc, namefile):
     # number of batches in a ON period
+    Toff = np.random.exponential(scale = ToffMean)
     z = math.floor(Ton / tau)
     ti = []
     for value in range(0, Nc + z*10000):
@@ -88,10 +89,9 @@ def tokenBucketFilter(namefile, rho, b, b0):
             capacity = labeling(capacity, int(elm[2])/int(elm[1]), F)
             # print(capacity)
 
-    for line in F:
-        print(line)
+    print("Compliant packets: ", compliantPackets(F))
 
 
 
-sourceModule(1, 1, 0.2, 3, 1000, 10000, 'output.txt')
-tokenBucketFilter('SourceTrafficTrace.txt', 8000, 3000, 3000)
+sourceModule(1, 1, 0.2, 3, 1000, 10000, 'outputSource.txt')
+tokenBucketFilter('outputSource.txt', 8000, 3000, 3000)
